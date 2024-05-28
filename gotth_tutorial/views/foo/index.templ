@@ -1,7 +1,11 @@
 package foo
 
+import "gotth_tutorial/views/layouts"
+
 templ Index() {
-	<div>
+	@layouts.Base(){
+		<div>
 		Hello World
 	</div>
+	}
 }

@@ -6,5 +6,5 @@ import (
 )
 
 func Handlefoo(w http.ResponseWriter, r *http.Request) error {
-	return foo.Index().Render(r.Context(), w)
+	return Render(w, r, foo.Index())
 }
