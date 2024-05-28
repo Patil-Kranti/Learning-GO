@@ -1,7 +1,10 @@
 package handlers
 
-import "net/http"
+import (
+	"gotth_tutorial/views/foo"
+	"net/http"
+)
 
-func Handlefoo(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello, World! from foo1"))
+func Handlefoo(w http.ResponseWriter, r *http.Request) error {
+	return foo.Index().Render(r.Context(), w)
 }

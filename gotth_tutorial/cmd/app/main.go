@@ -18,7 +18,7 @@ func main() {
 	}
 
 	router := chi.NewMux()
-	router.Get("/foo", handlers.Handlefoo)
+	router.Get("/foo", handlers.Make(handlers.Handlefoo))
 	fmt.Println("Hello, World!")
 
 	listenAdder := os.Getenv("LISTEN_ADDR")
