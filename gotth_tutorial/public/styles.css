@@ -583,11 +583,6 @@ video {
   border-color: rgb(239 68 68 / var(--tw-border-opacity));
 }
 
-.bg-slate-800 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(30 41 59 / var(--tw-bg-opacity));
-}
-
 .text-xl {
   font-size: 1.25rem;
   line-height: 1.75rem;
@@ -597,9 +592,9 @@ video {
   font-weight: 700;
 }
 
-.text-blue-500 {
+.text-cyan-700 {
   --tw-text-opacity: 1;
-  color: rgb(59 130 246 / var(--tw-text-opacity));
+  color: rgb(14 116 144 / var(--tw-text-opacity));
 }
 
 .antialiased {

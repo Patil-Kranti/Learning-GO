@@ -19,7 +19,7 @@ func main() {
 
 	router := chi.NewMux()
 	router.Handle("/*", public())
-	router.Get("/foo", handlers.Make(handlers.Handlefoo))
+	router.Get("/", handlers.Make(handlers.HandleHome))
 	fmt.Println("Hello, World!1")
 
 	listenAdder := os.Getenv("LISTEN_ADDR")
