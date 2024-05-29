@@ -1,11 +1,13 @@
 package foo
 
-import "gotth_tutorial/views/layouts"
+import (
+	"gotth_tutorial/views/layouts"
+)
 
 templ Index() {
 	@layouts.Base() {
-		<div>
-			Hello World 12
+		<div class="flex flex-col justify-center items-center">
+			<div class="text-xl border border-red-500 text-blue-500 font-bold ">Hello World 123</div>
 		</div>
 	}
 }

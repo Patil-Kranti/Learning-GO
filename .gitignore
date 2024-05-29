@@ -23,3 +23,6 @@ go.work
 *.mod
 initMain
 go.sum
+
+
+node_modules/

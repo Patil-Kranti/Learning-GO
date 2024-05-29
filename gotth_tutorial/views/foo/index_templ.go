@@ -10,7 +10,9 @@ import "context"
 import "io"
 import "bytes"
 
-import "gotth_tutorial/views/layouts"
+import (
+	"gotth_tutorial/views/layouts"
+)
 
 func Index() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {

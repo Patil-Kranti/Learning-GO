@@ -5,12 +5,15 @@ package main
 
 import (
 	"embed"
+	"fmt"
 	"net/http"
+	"os"
 )
 
 //go:embed public
 var publicFS embed.FS
 
 func public() http.Handler {
-	return http.FileServerFS(publicFS)
+	fmt.Println("building static files for development")
+	return http.StripPrefix("/public/", http.FileServerFS(os.DirFS("public")))
 }
