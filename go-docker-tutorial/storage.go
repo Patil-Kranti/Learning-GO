@@ -18,6 +18,24 @@ type PostgresStore struct {
 	db *sql.DB
 }
 
+func (s *PostgresStore) Init() error {
+
+	return s.CreateAccountTable()
+}
+func (s *PostgresStore) CreateAccountTable() error {
+	query := `create table if not exists account (
+    id serial primary key,
+    first_name varchar(50),
+    last_name varchar(50),
+    number serial,
+    balance serial,
+    created_at timestamp
+    )`
+
+	_, err := s.db.Exec(query)
+	return err
+}
+
 func NewPostgresStore() (*PostgresStore, error) {
 	connStr := "user=postgres dbname=postgres password=root sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
