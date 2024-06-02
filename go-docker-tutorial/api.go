@@ -11,11 +11,13 @@ import (
 
 type ApiServer struct {
 	listenAddr string
+	store      Storage
 }
 
-func NewApiServer(listenAddr string) *ApiServer {
+func NewApiServer(listenAddr string, store Storage) *ApiServer {
 	return &ApiServer{
 		listenAddr: listenAddr,
+		store:      store,
 	}
 }
 
