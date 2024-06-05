@@ -2,6 +2,8 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
+	"log"
 
 	_ "github.com/lib/pq"
 )
@@ -37,7 +39,8 @@ func (s *PostgresStore) CreateAccountTable() error {
 }
 
 func NewPostgresStore() (*PostgresStore, error) {
-	connStr := "user=postgres dbname=postgres password=root sslmode=disable"
+	connStr := "host = localhost port = 5433 user=postgres dbname=postgres password=root sslmode=disable"
+
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, err
@@ -51,7 +54,16 @@ func NewPostgresStore() (*PostgresStore, error) {
 	}, nil
 }
 
-func (s *PostgresStore) CreateAccount(*Account) error {
+func (s *PostgresStore) CreateAccount(account *Account) error {
+	query := `insert into account
+        (first_name, last_name, number,balance,created_at)
+        values ($1,$2, $3,$4,$5)`
+
+	rsp, err := s.db.Exec(query, account.FirstName, account.LastName, account.Number, account.Balance, account.CreatedAt)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%+v\n", rsp)
 	return nil
 }
 func (s *PostgresStore) UpdateAccount(*Account) error {

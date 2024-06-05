@@ -45,8 +45,18 @@ func (s *ApiServer) handleAccount(w http.ResponseWriter, r *http.Request) error 
 	return fmt.Errorf("Method not allowed: %s", r.Method)
 
 }
-func (*ApiServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) error {
-	return nil
+func (s *ApiServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) error {
+	createAccountRequest := new(CreateAccountRequest)
+	if err := json.NewDecoder(r.Body).Decode(createAccountRequest); err != nil {
+		return err
+	}
+	account := NewAccount(createAccountRequest.FirstName, createAccountRequest.LastName)
+
+	if err := s.store.CreateAccount(account); err != nil {
+		return err
+	}
+
+	return WriteJson(w, http.StatusOK, account)
 
 }
 func (*ApiServer) handleGetAccount(w http.ResponseWriter, r *http.Request) error {
