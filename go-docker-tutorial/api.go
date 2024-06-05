@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -69,13 +70,16 @@ func (s *ApiServer) handleGetAccount(w http.ResponseWriter, r *http.Request) err
 	return WriteJson(w, http.StatusOK, account)
 
 }
-func (*ApiServer) handleGetAccountById(w http.ResponseWriter, r *http.Request) error {
+func (s *ApiServer) handleGetAccountById(w http.ResponseWriter, r *http.Request) error {
 
-	id := mux.Vars(r)["id"]
+	idstr := mux.Vars(r)["id"]
+	id, err := strconv.Atoi(idstr)
+	if err != nil {
+		log.Fatal(err)
+		return fmt.Errorf("Id %s was invalid", idstr)
+	}
 
-	fmt.Println(id)
-
-	account := NewAccount("Bob", "Ross")
+	account, err := s.store.GetAccountById(id)
 	return WriteJson(w, http.StatusOK, account)
 
 }
