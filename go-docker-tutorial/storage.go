@@ -83,11 +83,14 @@ func (s *PostgresStore) CreateAccount(account *Account) error {
 	fmt.Printf("%+v\n", rsp)
 	return nil
 }
-func (s *PostgresStore) UpdateAccount(*Account) error {
+func (s *PostgresStore) UpdateAccount(account *Account) error {
 	return nil
 }
 func (s *PostgresStore) DeleteAccount(id int) error {
-	return nil
+
+	_, err := s.db.Query("Delete from account where id=$1", id)
+
+	return err
 }
 func (s *PostgresStore) GetAccountById(id int) (*Account, error) {
 
