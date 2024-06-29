@@ -15,15 +15,31 @@ type Storage interface {
 
 	GetAccounts() ([]*Account, error)
 	GetAccountById(int) (*Account, error)
+
+	CreateUser(*User) error
 }
 
 type PostgresStore struct {
 	db *sql.DB
 }
 
-func (s *PostgresStore) Init() error {
+func (s *PostgresStore) Init() (error, error) {
 
-	return s.CreateAccountTable()
+	return s.CreateAccountTable(), s.CreateUserTable()
+}
+
+func (s *PostgresStore) CreateUserTable() error {
+	query := `create table if not exists users (
+    id serial primary key,
+	email varchar(50),
+	password varchar(500),
+    token varchar(500),
+    account_number serial,
+    created_at timestamp
+    )`
+
+	_, err := s.db.Exec(query)
+	return err
 }
 func (s *PostgresStore) CreateAccountTable() error {
 	query := `create table if not exists account (
@@ -70,6 +86,18 @@ func (s *PostgresStore) GetAccounts() ([]*Account, error) {
 		accounts = append(accounts, account)
 	}
 	return accounts, nil
+}
+func (s *PostgresStore) CreateUser(user *User) error {
+	query := `insert into users
+        (email, password, token,account_number,created_at)
+        values ($1,$2, $3,$4,$5)`
+
+	rsp, err := s.db.Exec(query, user.Email, user.EncryptedPassword, user.Token, user.AccountNumber, user.CreatedAt)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%+v\n", rsp)
+	return nil
 }
 func (s *PostgresStore) CreateAccount(account *Account) error {
 	query := `insert into account

@@ -11,6 +11,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type ApiServer struct {
@@ -27,12 +28,52 @@ func NewApiServer(listenAddr string, store Storage) *ApiServer {
 
 func (s *ApiServer) Run() {
 	router := mux.NewRouter()
+
+	router.HandleFunc("/login", makeHttpHandleFunc(s.handleLogin))
+	router.HandleFunc("/register", makeHttpHandleFunc(s.handleRegister))
 	router.HandleFunc("/account", makeHttpHandleFunc(s.handleAccount))
 	router.HandleFunc("/account/{id}", withJWTAuth(makeHttpHandleFunc(s.handleGetAccountById), s.store))
 	router.HandleFunc("/transfer", makeHttpHandleFunc(s.handleTransfer))
 
 	log.Println("Server running on port: ", s.listenAddr)
 	http.ListenAndServe(s.listenAddr, router)
+}
+func (s *ApiServer) handleRegister(w http.ResponseWriter, r *http.Request) error {
+
+	var req RegisterRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return err
+
+	}
+
+	account := NewAccount(req.FirstName, req.LastName)
+	createdAccount, tokenString, err := createAccountAndJWT(s.store, account)
+	if err != nil {
+		return err
+	}
+	fmt.Println(tokenString)
+	fmt.Println(createdAccount)
+
+	encCryptedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	user := NewUser(req.Email, string(encCryptedPassword), tokenString, createdAccount.Number)
+
+	if err := s.store.CreateUser(user); err != nil {
+		return err
+	}
+
+	return WriteJson(w, http.StatusOK, user)
+}
+func (s *ApiServer) handleLogin(w http.ResponseWriter, r *http.Request) error {
+
+	var req LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return err
+	}
+
+	return WriteJson(w, http.StatusOK, req)
 }
 func (s *ApiServer) handleAccount(w http.ResponseWriter, r *http.Request) error {
 	if r.Method == "GET" {
@@ -47,7 +88,7 @@ func (s *ApiServer) handleAccount(w http.ResponseWriter, r *http.Request) error 
 	if r.Method == "DELETE" {
 		return s.handleDeleteAccount(w, r)
 	}
-	return fmt.Errorf("Method not allowed: %s", r.Method)
+	return fmt.Errorf("method not allowed: %s", r.Method)
 
 }
 func (s *ApiServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) error {
@@ -56,15 +97,10 @@ func (s *ApiServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 	account := NewAccount(createAccountRequest.FirstName, createAccountRequest.LastName)
-
-	if err := s.store.CreateAccount(account); err != nil {
-		return err
-	}
-	tokenString, err := createJwt(account)
+	_, _, err := createAccountAndJWT(s.store, account)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
-	fmt.Println(tokenString)
 	return WriteJson(w, http.StatusOK, account)
 
 }
@@ -96,7 +132,7 @@ func (s *ApiServer) handleGetAccountById(w http.ResponseWriter, r *http.Request)
 		return s.handleDeleteAccount(w, r)
 	}
 
-	return fmt.Errorf("Method not allowed: %s", r.Method)
+	return fmt.Errorf("method not allowed: %s", r.Method)
 }
 func (s *ApiServer) handleDeleteAccount(w http.ResponseWriter, r *http.Request) error {
 
@@ -133,6 +169,19 @@ type ApiError struct {
 	Error string `json:"error"`
 }
 
+func createAccountAndJWT(s Storage, account *Account) (*Account, string, error) {
+
+	if err := s.CreateAccount(account); err != nil {
+		return nil, "", err
+	}
+	tokenString, err := createJwt(account)
+	if err != nil {
+		return nil, "", err
+
+	}
+	fmt.Println(tokenString)
+	return account, tokenString, nil
+}
 func createJwt(account *Account) (string, error) {
 
 	claims := &jwt.MapClaims{
@@ -175,7 +224,6 @@ func withJWTAuth(handlerFunc http.HandlerFunc, s Storage) http.HandlerFunc {
 		}
 		claims := token.Claims.(jwt.MapClaims)
 		fmt.Println(int64(claims["accountNumber"].(float64)))
-		fmt.Println(account.Number)
 
 		if account.Number != int64(claims["accountNumber"].(float64)) {
 			permissionDenied(w)
@@ -190,7 +238,7 @@ func validateJWT(tokenString string) (*jwt.Token, error) {
 	return jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return []byte(secret), nil
 	})
