@@ -15,7 +15,7 @@ type CreateAccountRequest struct {
 }
 
 type Account struct {
-	Id        int       `json:"id"`
+	Id        int  `json:"id"`
 	FirstName string    `json:"firstName"`
 	LastName  string    `json:"lastName"`
 	Number    int64     `json:"number"`

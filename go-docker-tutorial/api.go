@@ -28,7 +28,7 @@ func NewApiServer(listenAddr string, store Storage) *ApiServer {
 func (s *ApiServer) Run() {
 	router := mux.NewRouter()
 	router.HandleFunc("/account", makeHttpHandleFunc(s.handleAccount))
-	router.HandleFunc("/account/{id}", withJWTAuth(makeHttpHandleFunc(s.handleGetAccountById)))
+	router.HandleFunc("/account/{id}", withJWTAuth(makeHttpHandleFunc(s.handleGetAccountById), s.store))
 	router.HandleFunc("/transfer", makeHttpHandleFunc(s.handleTransfer))
 
 	log.Println("Server running on port: ", s.listenAddr)
@@ -143,15 +143,42 @@ func createJwt(account *Account) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(secret))
 }
-func withJWTAuth(handlerFunc http.HandlerFunc) http.HandlerFunc {
+func permissionDenied(w http.ResponseWriter) {
+
+	WriteJson(w, http.StatusForbidden, ApiError{Error: "Permission Denied"})
+}
+func withJWTAuth(handlerFunc http.HandlerFunc, s Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Println("Calling the JWT middleware")
 		tokenString := r.Header.Get("x-jwt-token")
-		_, error := validateJWT(tokenString)
+		token, error := validateJWT(tokenString)
 
 		if error != nil {
-			WriteJson(w, http.StatusForbidden, ApiError{Error: "Invalid Token"})
+			permissionDenied(w)
+			return
+		}
+
+		if !token.Valid {
+			permissionDenied(w)
+			return
+		}
+		userId, err := getIdIntFromString(r)
+		if err != nil {
+			permissionDenied(w)
+			return
+		}
+		account, error := s.GetAccountById(userId)
+		if error != nil {
+			permissionDenied(w)
+			return
+		}
+		claims := token.Claims.(jwt.MapClaims)
+		fmt.Println(int64(claims["accountNumber"].(float64)))
+		fmt.Println(account.Number)
+
+		if account.Number != int64(claims["accountNumber"].(float64)) {
+			permissionDenied(w)
 			return
 		}
 		handlerFunc(w, r)
@@ -165,7 +192,6 @@ func validateJWT(tokenString string) (*jwt.Token, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-
 		return []byte(secret), nil
 	})
 
