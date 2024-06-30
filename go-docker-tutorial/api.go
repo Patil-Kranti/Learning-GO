@@ -67,13 +67,25 @@ func (s *ApiServer) handleRegister(w http.ResponseWriter, r *http.Request) error
 	return WriteJson(w, http.StatusOK, user)
 }
 func (s *ApiServer) handleLogin(w http.ResponseWriter, r *http.Request) error {
+	if r.Method != "POST" {
+		return fmt.Errorf("method not allowed: %s", r.Method)
+	}
 
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return err
 	}
+	user, err := s.store.GetUserByEmail(req.Email)
+	if err != nil {
+		return err
+	}
 
-	return WriteJson(w, http.StatusOK, req)
+	print(user.EncryptedPassword)
+	if err := bcrypt.CompareHashAndPassword([]byte(user.EncryptedPassword), []byte(req.Password)); err != nil {
+		return WriteJson(w, http.StatusUnauthorized, ApiError{Error: "Invalid credentials"})
+	}
+
+	return WriteJson(w, http.StatusOK, user)
 }
 func (s *ApiServer) handleAccount(w http.ResponseWriter, r *http.Request) error {
 	if r.Method == "GET" {
@@ -235,6 +247,7 @@ func withJWTAuth(handlerFunc http.HandlerFunc, s Storage) http.HandlerFunc {
 }
 
 func validateJWT(tokenString string) (*jwt.Token, error) {
+	fmt.Println(tokenString)
 	secret := os.Getenv("JWT_SECRET")
 	return jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:

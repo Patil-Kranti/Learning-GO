@@ -17,6 +17,7 @@ type Storage interface {
 	GetAccountById(int) (*Account, error)
 
 	CreateUser(*User) error
+	GetUserByEmail(string) (*User, error)
 }
 
 type PostgresStore struct {
@@ -56,7 +57,7 @@ func (s *PostgresStore) CreateAccountTable() error {
 }
 
 func NewPostgresStore() (*PostgresStore, error) {
-	connStr := "host = localhost port = 5433 user=postgres dbname=postgres password=root sslmode=disable"
+	connStr := "host = db port = 5432 user=postgres dbname=postgres password=postgres sslmode=disable"
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -133,10 +134,27 @@ func (s *PostgresStore) GetAccountById(id int) (*Account, error) {
 	}
 	return nil, fmt.Errorf("account %d not found", id)
 }
+func (s *PostgresStore) GetUserByEmail(email string) (*User, error) {
+
+	rsp, err := s.db.Query("select * from users where email=$1", email)
+	if err != nil {
+		return nil, err
+	}
+	for rsp.Next() {
+		return scanIntoUsers(rsp)
+	}
+	return nil, fmt.Errorf("user %s not found", email)
+}
 
 func scanIntoAccount(rows *sql.Rows) (*Account, error) {
 
 	account := new(Account)
 	err := rows.Scan(&account.Id, &account.FirstName, &account.LastName, &account.Number, &account.Balance, &account.CreatedAt)
 	return account, err
+}
+func scanIntoUsers(rows *sql.Rows) (*User, error) {
+
+	user := new(User)
+	err := rows.Scan(&user.Id, &user.Email, &user.EncryptedPassword, &user.Token, &user.AccountId, &user.CreatedAt)
+	return user, err
 }

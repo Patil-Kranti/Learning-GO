@@ -27,3 +27,6 @@ go.sum
 
 node_modules/
 go-docker-tutorial/.zed
+go-docker-tutorial/db
+go-docker-tutorial/tmp
+go-docker-tutorial/.env

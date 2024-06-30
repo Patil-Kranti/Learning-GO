@@ -1,8 +1,6 @@
 package main
 
-import (
-	"log"
-)
+import "log"
 
 func main() {
 	store, err := NewPostgresStore()
@@ -17,5 +15,6 @@ func main() {
 		log.Fatal(err2)
 	}
 	server := NewApiServer(":3000", store)
+	// server := NewApiServer(":3001", nil)
 	server.Run()
 }
