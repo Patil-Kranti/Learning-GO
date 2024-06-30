@@ -47,18 +47,18 @@ func (s *ApiServer) handleRegister(w http.ResponseWriter, r *http.Request) error
 	}
 
 	account := NewAccount(req.FirstName, req.LastName)
-	createdAccount, tokenString, err := createAccountAndJWT(s.store, account)
+	accountId, tokenString, err := createAccountAndJWT(s.store, account)
 	if err != nil {
 		return err
 	}
-	fmt.Println(tokenString)
-	fmt.Println(createdAccount)
+	// fmt.Println(tokenString)
+	fmt.Println(accountId)
 
 	encCryptedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
-	user := NewUser(req.Email, string(encCryptedPassword), tokenString, createdAccount.Number)
+	user := NewUser(req.Email, string(encCryptedPassword), tokenString, accountId)
 
 	if err := s.store.CreateUser(user); err != nil {
 		return err
@@ -169,18 +169,19 @@ type ApiError struct {
 	Error string `json:"error"`
 }
 
-func createAccountAndJWT(s Storage, account *Account) (*Account, string, error) {
+func createAccountAndJWT(s Storage, account *Account) (int, string, error) {
 
-	if err := s.CreateAccount(account); err != nil {
-		return nil, "", err
+	accountId, err := s.CreateAccount(account)
+	if err != nil {
+		return 0, "", err
 	}
 	tokenString, err := createJwt(account)
 	if err != nil {
-		return nil, "", err
+		return 0, "", err
 
 	}
 	fmt.Println(tokenString)
-	return account, tokenString, nil
+	return accountId, tokenString, nil
 }
 func createJwt(account *Account) (string, error) {
 

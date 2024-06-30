@@ -9,7 +9,7 @@ import (
 )
 
 type Storage interface {
-	CreateAccount(*Account) error
+	CreateAccount(*Account) (int, error)
 	DeleteAccount(int) error
 	UpdateAccount(*Account) error
 
@@ -34,7 +34,7 @@ func (s *PostgresStore) CreateUserTable() error {
 	email varchar(50),
 	password varchar(500),
     token varchar(500),
-    account_number serial,
+    account_id serial,
     created_at timestamp
     )`
 
@@ -89,27 +89,29 @@ func (s *PostgresStore) GetAccounts() ([]*Account, error) {
 }
 func (s *PostgresStore) CreateUser(user *User) error {
 	query := `insert into users
-        (email, password, token,account_number,created_at)
+        (email, password, token,account_id,created_at)
         values ($1,$2, $3,$4,$5)`
 
-	rsp, err := s.db.Exec(query, user.Email, user.EncryptedPassword, user.Token, user.AccountNumber, user.CreatedAt)
+	rsp, err := s.db.Exec(query, user.Email, user.EncryptedPassword, user.Token, user.AccountId, user.CreatedAt)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("%+v\n", rsp)
 	return nil
 }
-func (s *PostgresStore) CreateAccount(account *Account) error {
+func (s *PostgresStore) CreateAccount(account *Account) (int, error) {
 	query := `insert into account
         (first_name, last_name, number,balance,created_at)
-        values ($1,$2, $3,$4,$5)`
+        values ($1,$2, $3,$4,$5) returning id`
 
-	rsp, err := s.db.Exec(query, account.FirstName, account.LastName, account.Number, account.Balance, account.CreatedAt)
+	var id int
+	err := s.db.QueryRow(query, account.FirstName, account.LastName, account.Number, account.Balance, account.CreatedAt).Scan(&id)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error executing query: %v", err)
 	}
-	fmt.Printf("%+v\n", rsp)
-	return nil
+
+	fmt.Printf("New account created with id: %d\n", id)
+	return id, nil
 }
 func (s *PostgresStore) UpdateAccount(account *Account) error {
 	return nil

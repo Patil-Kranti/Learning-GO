@@ -19,7 +19,7 @@ type User struct {
 	Email             string    `json:"email"`
 	EncryptedPassword string    `json:"-"`
 	Token             string    `json:"token"`
-	AccountNumber     int64     `json:"accountNumber"`
+	AccountId         int       `json:"accountId"`
 	CreatedAt         time.Time `json:"createdAt"`
 }
 type TransferRequest struct {
@@ -48,12 +48,12 @@ func NewAccount(firstName, lastName string) *Account {
 		CreatedAt: time.Now().UTC(),
 	}
 }
-func NewUser(email string, password string, token string, accountNumber int64) *User {
+func NewUser(email string, password string, token string, accountId int) *User {
 	return &User{
 		Email:             email,
 		EncryptedPassword: password,
 		Token:             token,
-		AccountNumber:     accountNumber,
+		AccountId:         accountId,
 		CreatedAt:         time.Now().UTC(),
 	}
 }
