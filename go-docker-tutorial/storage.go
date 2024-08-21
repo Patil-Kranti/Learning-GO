@@ -101,7 +101,8 @@ func (s *PostgresStore) CreateUser(user *User) error {
 	return nil
 }
 func (s *PostgresStore) CreateAccount(account *Account) (int, error) {
-	query := `insert into account
+	query := 
+	`insert into account
         (first_name, last_name, number,balance,created_at)
         values ($1,$2, $3,$4,$5) returning id`
 
